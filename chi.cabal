@@ -1,0 +1,76 @@
+name: chi
+version: 1.2.0.0
+cabal-version: >=1.8
+build-type: Simple
+license: BSD3
+license-file: LICENSE
+maintainer: me@fujimuradaisuke.com
+homepage: https://github.com/fujimura/chi
+bug-reports: https://github.com/fujimura/chi/issues
+synopsis: Generate scaffold for cabal project
+description: This application generates a scaffold for Haskell project from a Git repository.
+category: Distribution
+author: Fujimura Daisuke
+ 
+source-repository head
+    type: git
+    location: https://github.com/fujimura/chi.git
+ 
+executable chi
+    build-depends:
+        base ==4.*,
+        ansi-wl-pprint -any,
+        Cabal >= 1.18,
+        bytestring -any,
+        directory -any,
+        filepath -any,
+        optparse-applicative >=0.10.0,
+        parsec -any,
+        process >=1.2.0.0,
+        split -any,
+        template ==0.2.*,
+        temporary ==1.2.0.3,
+        text >1.0,
+        time -any
+    main-is: Main.hs
+    buildable: True
+    hs-source-dirs: src
+    ghc-options: -Wall
+ 
+test-suite spec
+    build-depends:
+        base -any,
+        ansi-wl-pprint -any,
+        HUnit -any,
+        bytestring -any,
+        directory -any,
+        doctest -any,
+        filepath -any,
+        hspec >=2.0.0,
+        Cabal >= 1.18,
+        optparse-applicative >=0.10.0,
+        parsec -any,
+        process -any,
+        silently -any,
+        split -any,
+        template ==0.2.*,
+        temporary ==1.2.0.3,
+        text >1.0,
+        time -any
+    type: exitcode-stdio-1.0
+    main-is: Spec.hs
+    buildable: True
+    hs-source-dirs: src test
+    ghc-options: -Wall
+
+test-suite doctests
+    build-depends:
+        base -any,
+        doctest >=0.8,
+        process -any
+    type: exitcode-stdio-1.0
+    main-is: doctests.hs
+    buildable: True
+    hs-source-dirs: src test
+    ghc-options: -threaded
+ 
