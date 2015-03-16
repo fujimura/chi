@@ -13,7 +13,11 @@ data Option = Option
 
 type File = (FilePath,String)
 
-data Original a = Original a deriving(Eq,Ord,Show)
-data Modified a = Modified a (Original a) deriving (Eq,Ord,Show) -- TODO No way to distinguish modified/original
+-- Data tagged as original.
+data Original a = Original a deriving (Eq,Ord,Show)
 
+-- Modified data contains original.
+data Modified a = Modified a (Original a) deriving (Eq,Ord,Show)
+
+-- Source of the package.
 data Source = Repo String | CabalPackage String deriving (Eq,Ord,Show)

@@ -18,27 +18,28 @@ import           Data.Version                                (Version (Version))
 import           Distribution.Package                        (PackageIdentifier (PackageIdentifier), PackageName (PackageName))
 import           Distribution.PackageDescription             (GenericPackageDescription (GenericPackageDescription))
 import qualified Distribution.PackageDescription             as PackageDescription
-import           Distribution.PackageDescription.Parse       (readPackageDescription, parsePackageDescription, ParseResult(..))
-import           Distribution.PackageDescription.PrettyPrint (writeGenericPackageDescription, showGenericPackageDescription)
-import           Distribution.Simple.Utils                   (findPackageDesc)
-import qualified Distribution.Verbosity                      as Verbosity
-import           System.Directory
+import           Distribution.PackageDescription.Parse       (ParseResult (..), parsePackageDescription)
+import           Distribution.PackageDescription.PrettyPrint (showGenericPackageDescription)
+import           System.Directory                            (canonicalizePath, createDirectoryIfMissing, doesDirectoryExist, getCurrentDirectory, getDirectoryContents, setCurrentDirectory)
 import           System.FilePath                             (dropFileName,
-                                                              joinPath,
-                                                              takeExtension,
                                                               extSeparator,
+                                                              joinPath,
                                                               replaceBaseName,
-                                                              splitPath, (</>))
+                                                              splitPath,
+                                                              takeExtension,
+                                                              (</>))
 import           System.IO.Temp                              (withSystemTempDirectory)
 import           System.Process                              (callCommand,
                                                               system)
 
+-- | Run chi.
 run :: Option -> IO ()
 run option = do
     files <- fetch (source option)
     writeFiles (map (updateCabalFile option . convert option) files)
     runAfterCommands option
 
+-- | Fetch template from source.
 fetch :: Source -> IO [File]
 fetch (Repo repo) = do
     e <- doesDirectoryExist repo
@@ -51,9 +52,7 @@ fetch (Repo repo) = do
         Git.clone repo'
         paths <- Git.lsFiles
         mapM fetchFile paths
-
--- TODO Handle IO exceptions
-fetch (CabalPackage p) = inTemporaryDirectory "chi" $ do
+fetch (CabalPackage p) = inTemporaryDirectory "chi" $ do -- TODO Handle IO exceptions
     callCommand $ "cabal get " ++ p
     contents <- getDirectoryContents "."
     case contents \\ [".", ".."] of
@@ -72,8 +71,8 @@ fetch (CabalPackage p) = inTemporaryDirectory "chi" $ do
         go (x:_:ys) = joinPath (x:ys)
 
 -- | Get directory contents recursively.
---
-getDirectoryContentsRecursively :: FilePath -> IO [FilePath]
+getDirectoryContentsRecursively :: FilePath      -- Name of directory to get contents
+                                -> IO [FilePath] -- 'FilePath's canonical from current directory
 getDirectoryContentsRecursively path = go [path]
   where
     go :: [FilePath] -> IO [FilePath]
@@ -87,7 +86,7 @@ getDirectoryContentsRecursively path = go [path]
                   (x:) <$> go xs
 
 -- |Run callback in a temporary directory.
-inTemporaryDirectory :: String         -- ^ Base of temporary directory name
+inTemporaryDirectory :: String       -- ^ Base of temporary directory name
                      -> IO a -> IO a -- ^ Callback
 inTemporaryDirectory name callback =
     withSystemTempDirectory name $ flip inDirectory callback
@@ -130,7 +129,6 @@ convert Option {packageName, moduleName, directoryName, author, email, year} fil
 --
 -- >>> underscorize "foo-bar"
 -- "foo_bar"
---
 underscorize :: String -> String
 underscorize = replace "-" "_"
 
@@ -138,7 +136,6 @@ underscorize = replace "-" "_"
 --
 -- >>> moduleNameToFilePath "Foo.Bar"
 -- "Foo/Bar"
---
 moduleNameToFilePath :: String -> FilePath
 moduleNameToFilePath = joinPath . splitOn "."
 
@@ -164,23 +161,23 @@ isCabalFile :: File -> Bool
 isCabalFile (path,_) = ((== extSeparator:"cabal") . takeExtension) path
 
 updateCabalFile' :: Option -> File -> File
-updateCabalFile' option@Option {packageName} file@(path,content) = do
-    let path' = replaceBaseName path packageName
+updateCabalFile' option (path,content) = do
     case parsePackageDescription content of
       ParseFailed e -> error $ show e -- TODO
       ParseOk warnings x ->
-        (path', showGenericPackageDescription (updateGenericPackageDesctiption option x)) -- TODO warning
+        let path'    = replaceBaseName path (packageName option)
+            content' = showGenericPackageDescription (updateGenericPackageDesctiption option x)
+        in (path', content')
 
 -- | Update 'GenericPackageDescription' with given option.
--- TODO Stop updating version
 updateGenericPackageDesctiption :: Option -> GenericPackageDescription -> GenericPackageDescription
-updateGenericPackageDesctiption option gPkgDesc@GenericPackageDescription { PackageDescription.packageDescription = pd } =
+updateGenericPackageDesctiption option gpd@GenericPackageDescription { PackageDescription.packageDescription = pd } =
   let pid = PackageIdentifier (PackageName (packageName option)) (Version [0,0,1,0] [])
       pd' = pd { PackageDescription.package    = pid
                , PackageDescription.author     = author option
                , PackageDescription.maintainer = email option
                }
-  in gPkgDesc { PackageDescription.packageDescription = pd' }
+  in gpd { PackageDescription.packageDescription = pd' }
 
 -- | Run after-command given in option
 runAfterCommands :: Option -> IO ()
