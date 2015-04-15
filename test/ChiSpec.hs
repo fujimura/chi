@@ -19,7 +19,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = around_ (hSilence []) $ do
+spec = around_ (hSilence [stdout]) $ do
   it "should clone from cabal package with '-c'" $ do
     root <- getCurrentDirectory
     inTestDirectory $ do
@@ -117,4 +117,8 @@ spec = around_ (hSilence []) $ do
       Cli.run ["foo-bar-baz", "-r", (root </> "test" </> "template"), "--after-command", "cabal sandbox init"]
       doesFileExist "foo-bar-baz/cabal.sandbox.config" `shouldReturn` True
 
-  it "should output the generated files" pending
+  it "should output the generated files" $ do
+    root <- getCurrentDirectory
+    inTestDirectory $ do
+      (output,_) <- capture $ Cli.run ["foo-bar-baz", "-r", (root </> "test" </> "template")]
+      output `shouldContain` "  create  foo-bar-baz/.ghci"
