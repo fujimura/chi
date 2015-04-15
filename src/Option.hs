@@ -20,6 +20,7 @@ buildOption copt = do
         directoryName' = fromMaybe packageName' (CommandLineOption.directoryName copt)
         source'        = fromJust $ (Repo <$> CommandLineOption.repo copt) <|> (CabalPackage <$> CommandLineOption.cabalPackage copt)
         afterCommands' = catMaybes [ CommandLineOption.afterCommand copt ]
+        dryRun'        = CommandLineOption.dryRun copt
 
     year'   <- getCurrentYear
     author' <- Git.config "user.name"
@@ -31,6 +32,7 @@ buildOption copt = do
                   , email         = email'
                   , year          = year'
                   , source        = source'
+                  , dryRun        = dryRun'
                   , afterCommands = afterCommands'
                   }
 

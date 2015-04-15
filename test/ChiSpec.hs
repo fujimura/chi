@@ -122,3 +122,10 @@ spec = around_ (hSilence [stdout]) $ do
     inTestDirectory $ do
       (output,_) <- capture $ Cli.run ["foo-bar-baz", "-r", (root </> "test" </> "template")]
       output `shouldContain` "  create  foo-bar-baz/.ghci"
+
+  it "should not write file with --dry-run" $ do
+    root <- getCurrentDirectory
+    inTestDirectory $ do
+      (output,_) <- capture $ Cli.run ["foo-bar-baz", "-r", (root </> "test" </> "template"), "--dry-run"]
+      output `shouldContain` "  create  foo-bar-baz/.ghci"
+      doesFileExist "foo-bar-baz/.ghci" `shouldReturn` False

@@ -8,6 +8,7 @@ data Option = Option
              , email         :: String
              , year          :: String
              , source        :: Source
+             , dryRun        :: Bool
              , afterCommands :: [String]
              } deriving (Eq,Ord,Show)
 

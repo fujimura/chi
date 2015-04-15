@@ -11,6 +11,7 @@ data CommandLineOption = CommandLineOption
                        , directoryName :: Maybe FilePath
                        , repo          :: Maybe String
                        , cabalPackage  :: Maybe String
+                       , dryRun        :: Bool
                        , afterCommand  :: Maybe String
                        }
 
@@ -21,4 +22,5 @@ commandLineOption = CommandLineOption
    <*> optional (strOption (short 'd' <> long "directory-name" <> help "Directory to generate file"))
    <*> optional (strOption (short 'r' <> long "repository"     <> help "Repository of template"))
    <*> optional (strOption (short 'c' <> long "cabal-package"  <> help "Name of cabal package"))
+   <*>          (switch    (             long "dry-run"        <> help "Don't write file actually"))
    <*> optional (strOption (             long "after-command"  <> help "Command to run after generation"))

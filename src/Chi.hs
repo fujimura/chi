@@ -36,8 +36,12 @@ import           System.Process                              (callCommand,
 run :: Option -> IO ()
 run option = do
     files <- fetch (source option)
-    writeFiles (map (updateCabalFile option . convert option) files)
-    runAfterCommands option
+    let modifiedFiles = (map (updateCabalFile option . convert option) files)
+    if (dryRun option) then
+                         mapM_ report modifiedFiles
+                       else do
+                         writeFiles modifiedFiles
+                         runAfterCommands option
 
 -- | Fetch template from source.
 fetch :: Source -> IO [File]
@@ -144,8 +148,8 @@ writeFiles = mapM_ write'
   where
     write' :: Modified File -> IO ()
     write' m@(Modified f _) = write f >> report m
-    report :: Modified File -> IO ()
-    report (Modified (path,_) _) = putStrLn ("  create  " ++ path)
+report :: Modified File -> IO ()
+report (Modified (path,_) _) = putStrLn ("  create  " ++ path)
 
 replace :: Eq a => [a] -> [a] -> [a] -> [a]
 replace a b = foldl1 (++) . intersperse b . splitOn a
